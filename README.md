@@ -107,7 +107,7 @@ the site and the backend still work with it.
 
 ## Continuous integration
 
-GitHub Actions run the static checks and the tests on every pull request and on `main`, with a MySQL service. October CMS comes from its licensed registry, so the PHP job needs the repository secrets `OCTOBER_USERNAME` and `OCTOBER_LICENSE_KEY` (the same values as in `auth.json`); without them it is skipped with a notice and only the syntax and workflow checks run. A weekly job audits the locked dependencies, and a `vX.Y.Z` tag on `main` with a matching CHANGELOG entry publishes a GitHub release once CI passes.
+GitHub Actions need no license. On every pull request and on `main` they validate `composer.json`, audit the lock file, check the code style and the YAML, lint every PHP file and the workflows; the licensed October modules are left out of that install. PHPStan, Rector and the tests boot October itself, so they run locally with `make ready`. A weekly job audits the locked dependencies, and a `vX.Y.Z` tag on `main` with a matching CHANGELOG entry publishes a GitHub release once CI passes.
 
 ## License
 
