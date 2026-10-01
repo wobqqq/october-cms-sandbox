@@ -1,0 +1,81 @@
+<?php
+
+// Precise element types for the bare `array` properties October declares.
+
+namespace October\Rain\Extension {
+    class Extendable
+    {
+        /** @var array<int, string> */
+        public $implement;
+    }
+}
+
+namespace October\Rain\Database {
+    class Model extends \Illuminate\Database\Eloquent\Model
+    {
+        /** @var array<int, string> */
+        public $implement;
+
+        /** @var array<int, string> */
+        protected $dates;
+    }
+}
+
+namespace October\Rain\Database\Concerns {
+    trait HasJsonable
+    {
+        /** @var array<int, string> */
+        protected $jsonable;
+    }
+}
+
+namespace Backend\Classes {
+    class Controller extends \October\Rain\Extension\Extendable
+    {
+        /** @var array<int, string> */
+        protected $requiredPermissions;
+
+        /** @var string|null null until the page sets a title */
+        public $pageTitle;
+
+        /** @var array<int, string> */
+        protected $publicActions;
+
+        /** @return string|null null when the request names no AJAX handler */
+        public function getAjaxHandler() {}
+    }
+}
+
+// Fully qualified return types October documents relative to its namespace.
+
+namespace October\Rain\Auth\Concerns {
+    trait HasThrottle
+    {
+        /**
+         * @param string $loginName
+         * @param string $ipAddress
+         * @return \October\Rain\Auth\Models\Throttle
+         */
+        public function findThrottleByLogin($loginName, $ipAddress) {}
+    }
+
+    trait HasUser
+    {
+        /**
+         * @param array<string, mixed> $credentials
+         * @return \October\Rain\Auth\Models\User
+         */
+        public function findUserByCredentials(array $credentials) {}
+    }
+}
+
+namespace Backend\Models {
+    class AccessLog extends \October\Rain\Database\Model
+    {
+        /**
+         * @param \Illuminate\Database\Eloquent\Model $user
+         * @return self
+         */
+        public static function add($user) {}
+    }
+}
