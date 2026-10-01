@@ -1,0 +1,18 @@
+parameters:
+    level: max
+    paths:
+        - app
+        - bootstrap
+        - config
+        - tests
+    stubFiles:
+        - stubs/October.stub
+    scanDirectories:
+        - modules
+    bootstrapFiles:
+        - phpstan.bootstrap.php
+    strictRules:
+        # Larastan reports every Eloquent builder method as static
+        # (larastan/larastan#1272), and October's behaviours make methods reached
+        # through @mixin look static too.
+        dynamicCallOnStaticMethod: false

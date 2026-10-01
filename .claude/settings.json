@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(docker compose ps:*)",
+      "Bash(docker compose logs:*)",
+      "Bash(docker compose exec -T php-fpm composer:*)",
+      "Bash(docker compose exec -T php-fpm php artisan plugin:list)",
+      "Bash(docker compose exec -T php-fpm php vendor/bin/pest:*)",
+      "Bash(make test)",
+      "Bash(make test.coverage)",
+      "Bash(make code.check)",
+      "Bash(make code.fix)",
+      "Bash(make code.stan)",
+      "Bash(make ready)",
+      "Bash(make migrate)",
+      "Bash(make plugin.links)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(.env.*)",
+      "Read(**/auth.json)",
+      "Bash(git push origin main:*)",
+      "Bash(git push origin HEAD:main:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(sudo:*)"
+    ]
+  }
+}

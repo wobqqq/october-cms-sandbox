@@ -1,0 +1,111 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  php:
+    name: PHP checks and tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: app_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_PASSWORD: ''
+      LICENSE_USERNAME: ${{ secrets.OCTOBER_USERNAME }}
+      LICENSE_KEY: ${{ secrets.OCTOBER_LICENSE_KEY }}
+    steps:
+      - name: October CMS license
+        id: license
+        run: |
+          if [ -z "$LICENSE_USERNAME" ] || [ -z "$LICENSE_KEY" ]; then
+            echo "::notice::Skipping the PHP job: add the OCTOBER_USERNAME and OCTOBER_LICENSE_KEY secrets to install October CMS."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        if: steps.license.outputs.available == 'true'
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        if: steps.license.outputs.available == 'true'
+        with:
+          php-version: '8.4'
+          extensions: dom, gd, intl, mbstring, pdo_mysql, redis, zip
+          coverage: pcov
+          tools: none
+
+      - name: Install the dependencies
+        if: steps.license.outputs.available == 'true'
+        run: |
+          echo '127.0.0.1 mysql' | sudo tee -a /etc/hosts > /dev/null
+          cp .env.example .env
+          composer config --auth http-basic.gateway.octobercms.com "$LICENSE_USERNAME" "$LICENSE_KEY"
+          composer install --no-interaction --no-progress --prefer-dist
+          php artisan key:generate --ansi
+
+      - name: Static analysis and style
+        if: steps.license.outputs.available == 'true'
+        run: composer code.check
+
+      - name: Tests with coverage
+        if: steps.license.outputs.available == 'true'
+        run: composer test.coverage
+
+  syntax:
+    name: PHP syntax
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+        with:
+          php-version: '8.4'
+          coverage: none
+          tools: none
+
+      - name: Lint every PHP file
+        run: find app bootstrap config tests -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+
+  workflows:
+    name: Workflows
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Lint the GitHub workflows
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/914e7df21a07ef503a81201c76d2b11c789d3fca/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color

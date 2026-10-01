@@ -1,0 +1,20 @@
+description = "The one layout of the sandbox theme"
+==
+<!DOCTYPE html>
+<html lang="{{ this.site.locale|default('en') }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{{ this.page.title }} · October Sandbox</title>
+        <link rel="stylesheet" href="{{ 'assets/css/theme.css'|theme }}">
+        {% styles %}
+        {% placeholder meta %}
+    </head>
+    <body>
+        <main class="page">
+            {% page %}
+        </main>
+        {% partial 'footer' %}
+        {% scripts %}
+    </body>
+</html>

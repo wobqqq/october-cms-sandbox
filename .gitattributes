@@ -1,0 +1,5 @@
+* text=auto eol=lf
+bin/* text eol=lf
+*.png binary
+*.jpg binary
+*.ico binary
