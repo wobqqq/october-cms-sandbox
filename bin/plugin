@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+#
+# Mounts a plugin checkout that sits next to the sandbox at plugins/<vendor>/<name>
+# inside the containers and migrates it, or takes it out again. A mount, not a
+# symlink: October refuses files whose real path is outside the project. The
+# checkout's own vendor/ is hidden, or October would load its dev packages.
+
+set -euo pipefail
+
+cd "$(dirname "$0")/.."
+
+PORTFOLIO=$(dirname "$(pwd)")
+LINKS=plugins/.links
+OVERRIDE=docker-compose.override.yml
+ROOT=/var/www/portfolio/october-sandbox
+
+usage() {
+    echo "Usage: bin/plugin link <path> | unlink <path> | list" >&2
+    exit 1
+}
+
+artisan() {
+    docker compose exec -T php-fpm php artisan "$@"
+}
+
+checkout_of() {
+    local path
+    path=$(cd "$1" 2>/dev/null && pwd) || { echo "No such directory: $1" >&2; exit 1; }
+
+    [[ -f "$path/Plugin.php" ]] || { echo "$path has no Plugin.php" >&2; exit 1; }
+    [[ "$(dirname "$path")" == "$PORTFOLIO" ]] || { echo "$path must sit next to the sandbox, in $PORTFOLIO" >&2; exit 1; }
+
+    echo "$path"
+}
+
+code_of() {
+    sed -nE 's/^namespace[[:space:]]+([A-Za-z0-9_]+)\\([A-Za-z0-9_]+);.*/\1.\2/p' "$1/Plugin.php" | head -n 1
+}
+
+directory_of() {
+    local code=$1
+    echo "plugins/$(tr '[:upper:]' '[:lower:]' <<< "${code%%.*}")/$(tr '[:upper:]' '[:lower:]' <<< "${code#*.}")"
+}
+
+write_override() {
+    local before after directory checkout service
+
+    before=$(cat "$OVERRIDE" 2>/dev/null || true)
+
+    if [[ ! -s "$LINKS" ]]; then
+        rm -f "$OVERRIDE"
+    else
+        {
+            echo "# Written by bin/plugin from plugins/.links."
+            echo "services:"
+            for service in php-fpm nginx; do
+                echo "  $service:"
+                echo "    volumes:"
+                while read -r directory checkout; do
+                    echo "      - ../$checkout:$ROOT/$directory"
+                done < "$LINKS"
+                if grep -q . < <(while read -r directory checkout; do [[ -d "../$checkout/vendor" ]] && echo x; done < "$LINKS"); then
+                    echo "    tmpfs:"
+                    while read -r directory checkout; do
+                        [[ -d "../$checkout/vendor" ]] && echo "      - $ROOT/$directory/vendor"
+                    done < "$LINKS"
+                fi
+            done
+        } > "$OVERRIDE"
+    fi
+
+    after=$(cat "$OVERRIDE" 2>/dev/null || true)
+
+    if [[ "$before" != "$after" ]]; then
+        docker compose up -d --wait php-fpm nginx > /dev/null 2>&1
+    fi
+}
+
+link() {
+    local checkout code directory
+    checkout=$(checkout_of "$1")
+    code=$(code_of "$checkout")
+    directory=$(directory_of "$code")
+
+    if grep -qs "^$directory " "$LINKS"; then
+        echo "$code is already linked"
+    else
+        if [[ -e "$directory" && -n "$(ls -A "$directory" 2>/dev/null)" ]]; then
+            echo "$directory already holds a plugin" >&2
+            exit 1
+        fi
+
+        mkdir -p "$directory"
+        echo "$directory $(basename "$checkout")" >> "$LINKS"
+        write_override
+    fi
+
+    artisan october:migrate
+    artisan cache:clear > /dev/null
+    echo "Linked $checkout as $code"
+}
+
+unlink_plugin() {
+    local checkout code directory
+    checkout=$(checkout_of "$1")
+    code=$(code_of "$checkout")
+    directory=$(directory_of "$code")
+
+    grep -qs "^$directory " "$LINKS" || { echo "$code is not linked" >&2; exit 1; }
+
+    artisan sandbox:rollback "$code"
+
+    grep -v "^$directory " "$LINKS" > "$LINKS.tmp" || true
+    mv "$LINKS.tmp" "$LINKS"
+    [[ -s "$LINKS" ]] || rm -f "$LINKS"
+    write_override
+
+    rmdir "$directory" 2>/dev/null || true
+    rmdir "$(dirname "$directory")" 2>/dev/null || true
+
+    artisan cache:clear > /dev/null
+    echo "Unlinked $code"
+}
+
+case "${1:-}" in
+    link) [[ $# -eq 2 ]] || usage; link "$2" ;;
+    unlink) [[ $# -eq 2 ]] || usage; unlink_plugin "$2" ;;
+    list) cat "$LINKS" 2>/dev/null || true ;;
+    *) usage ;;
+esac

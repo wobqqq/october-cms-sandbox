@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App;
 
 use App\Console\CreateAdmin;
+use App\Console\RollbackPlugin;
 use Backend\Facades\Backend;
 use System\Classes\AppBase;
 
@@ -15,6 +16,7 @@ class Provider extends AppBase
         parent::register();
 
         $this->registerConsoleCommand('sandbox.admin', CreateAdmin::class);
+        $this->registerConsoleCommand('sandbox.rollback', RollbackPlugin::class);
     }
 
     /**
