@@ -1,0 +1,79 @@
+name: october-sandbox
+
+x-app-volumes: &app-volumes
+  # The whole portfolio, so path repositories and linked plugins
+  # (../oc-fortify-plugin, ...) resolve the same way inside the containers.
+  - ..:/var/www/portfolio
+
+services:
+  nginx:
+    container_name: october-sandbox-nginx
+    build: ./docker/nginx
+    restart: unless-stopped
+    volumes: *app-volumes
+    ports:
+      - 127.0.0.1:${APP_PORT:-8082}:80
+      - 127.0.0.1:${APP_PORT_HTTPS:-8443}:443
+    depends_on:
+      php-fpm:
+        condition: service_healthy
+
+  php-fpm:
+    container_name: october-sandbox-php-fpm
+    build:
+      context: ./docker/php-fpm
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        XDEBUG: ${XDEBUG:-false}
+    restart: unless-stopped
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes: *app-volumes
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ['CMD-SHELL', 'php-fpm -t || exit 1']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  mysql:
+    container_name: october-sandbox-mysql
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-app}
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
+    ports:
+      - 127.0.0.1:${DB_PUBLISHED_PORT:-33062}:3306
+    volumes:
+      - database:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 20s
+
+  redis:
+    container_name: october-sandbox-redis
+    image: redis:7.4-alpine
+    restart: unless-stopped
+
+  mailpit:
+    container_name: october-sandbox-mailpit
+    image: axllent/mailpit:v1.27
+    restart: unless-stopped
+    ports:
+      - 127.0.0.1:${MAILPIT_UI_PORT:-8027}:8025
+      - 127.0.0.1:${MAILPIT_SMTP_PORT:-1027}:1025
+
+volumes:
+  database: ~
