@@ -107,7 +107,7 @@ the site and the backend still work with it.
 
 ## Continuous integration
 
-GitHub Actions need no license. On every pull request and on `main` they validate `composer.json`, audit the lock file, check the code style and the YAML, lint every PHP file and the workflows; the licensed October modules are left out of that install. PHPStan, Rector and the tests boot October itself, so they run locally with `make ready`. A weekly job audits the locked dependencies, and a `vX.Y.Z` tag on `main` with a matching CHANGELOG entry publishes a GitHub release once CI passes.
+GitHub Actions need no license. On every pull request and on `main` they validate `composer.json`, audit the lock file, check the code style and the YAML, lint every PHP file and the workflows; the licensed October modules are left out of that install. PHPStan, Rector and the tests boot October itself, so they run locally with `make ready`. An audit workflow checks the locked dependencies when run by hand from the Actions tab, and a `vX.Y.Z` tag on `main` with a matching CHANGELOG entry publishes a GitHub release once CI passes.
 
 ## License
 
