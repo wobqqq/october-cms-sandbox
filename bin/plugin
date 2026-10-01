@@ -12,7 +12,7 @@ cd "$(dirname "$0")/.."
 PORTFOLIO=$(dirname "$(pwd)")
 LINKS=plugins/.links
 OVERRIDE=docker-compose.override.yml
-ROOT=/var/www/portfolio/october-sandbox
+ROOT=/var/www/portfolio/october-cms-sandbox
 
 usage() {
     echo "Usage: bin/plugin link <path> | unlink <path> | list" >&2

@@ -55,7 +55,7 @@ ENV COMPOSER_HOME=/home/www-data/.composer
 
 USER www-data
 
-WORKDIR /var/www/portfolio/october-sandbox
+WORKDIR /var/www/portfolio/october-cms-sandbox
 
 EXPOSE 9000
 

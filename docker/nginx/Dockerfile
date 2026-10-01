@@ -10,6 +10,6 @@ RUN apk add --no-cache openssl \
 COPY ./conf.d/* /etc/nginx/conf.d/
 COPY ./snippets/* /etc/nginx/snippets/
 
-WORKDIR /var/www/portfolio/october-sandbox
+WORKDIR /var/www/portfolio/october-cms-sandbox
 
 EXPOSE 80 443
