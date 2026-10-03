@@ -29,15 +29,16 @@ jobs:
           coverage: none
           tools: none
 
-      - name: Validate composer.json and audit the lock file
-        run: |
-          composer validate --strict --no-check-all
-          composer audit --locked --abandoned=report
+      - name: Validate composer.json
+        run: composer validate --strict --no-check-all
 
       - name: Install everything but the licensed October modules
         run: |
           composer config --unset repositories.octobercms
           composer remove october/all october/backend october/cms october/dashboard october/editor october/media october/system october/tailor --no-scripts --no-interaction --no-progress
+
+      - name: Audit the dependencies
+        run: composer audit --abandoned=report
 
       - name: Code style
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
