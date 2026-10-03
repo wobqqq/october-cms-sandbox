@@ -39,6 +39,10 @@ rules, without a baseline: fix the type, never add an ignore.
 - Leave the committed state without plugins: `plugins/` holds only `.gitkeep`,
   and `composer.json` requires no plugin.
 
+## Architecture
+
+The architecture skills in `.claude/skills/` (`application-layer`, `dependency-injection`, `error-handling`, `validation`, `events`, `testing-architecture`, `domain-layer-cqrs`, `plugin-boundaries`) are the rules for code added here and for the plugins tested in the sandbox. The sandbox itself keeps two console commands with no service layer: they are single-step tools, and the skills say not to add a layer for consistency alone.
+
 ## Conventions
 
 - `declare(strict_types=1);` in every PHP file, PSR-12 through php-cs-fixer.
