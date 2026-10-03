@@ -12,3 +12,4 @@ Skills in `.claude/skills`:
 - `laravel-best-practices` for plain Laravel code.
 
 Run `make ready` before calling a change done.
+- The architecture skills in `.claude/skills/` (`application-layer`, `dependency-injection`, `error-handling`, `validation`, `events`, `testing-architecture`, `domain-layer-cqrs`, `plugin-boundaries`) apply to any code added here.

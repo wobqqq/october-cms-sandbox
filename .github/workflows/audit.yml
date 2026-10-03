@@ -23,4 +23,6 @@ jobs:
           tools: none
 
       - name: Audit the locked PHP dependencies
-        run: composer audit --locked --abandoned=report
+        run: |
+          composer config --unset repositories.octobercms
+          composer audit --locked --abandoned=report
